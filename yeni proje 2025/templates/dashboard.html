@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Çalışma Planlayıcı Dashboard</title>
+  <style>
+    /* Genel stiller */
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f1f3f5;
+      margin: 0;
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .header h2 {
+      margin: 0;
+      font-size: 28px;
+      color: #333;
+    }
+    .header p {
+      font-size: 16px;
+      color: #555;
+    }
+    .logout-container {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .logout-container form button {
+      width: 150px;
+      padding: 10px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .logout-container form button:hover {
+      background-color: #c82333;
+    }
+    
+    /* Ana içerik: Mevcut planlar, yeni plan oluşturma formu ve API önerileri */
+    .main-content {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: center;
+    }
+    .panel {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 480px;
+    }
+    
+    /* Mevcut planların listelenmesi */
+    .panel h3 {
+      margin-top: 0;
+      color: #333;
+    }
+    .plan-list {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+    .plan-list li {
+      background-color: #f8f9fa;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      color: #444;
+      font-size: 1em;
+    }
+    .plan-list li .plan-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .plan-list li form {
+      margin: 0;
+    }
+    .plan-list li form button {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .plan-list li form button:hover {
+      background-color: #c82333;
+    }
+    .plan-list li .recommendation {
+      margin-top: 5px;
+      font-size: 0.9em;
+      color: #555;
+    }
+    
+    /* Yeni plan oluşturma formu */
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+    .form-group label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+      color: #444;
+    }
+    .form-group input, 
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      transition: border 0.3s;
+    }
+    .form-group input:focus, 
+    .form-group select:focus {
+      border-color: #28a745;
+      outline: none;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .btn:hover {
+      background-color: #218838;
+    }
+    
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background-color: #e9ecef;
+      border-radius: 8px;
+      font-size: 16px;
+      color: #333;
+    }
+    
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 14px;
+      color: #888;
+    }
+    .footer a {
+      color: #28a745;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    
+  </style>
+</head>
+<body>
+  <!-- Üst kısım: Başlık, Hoş Geldiniz Mesajı ve Çıkış -->
+  <div class="header">
+    <h2>Çalışma Planlayıcı</h2>
+    {% if username %}
+      <p>Hoş geldiniz, {{ username }}!</p>
+    {% endif %}
+  </div>
+  <div class="logout-container">
+    {% if username %}
+      <form action="{{ url_for('logout') }}" method="POST">
+        <button type="submit">Çıkış Yap</button>
+      </form>
+    {% endif %}
+  </div>
+  
+  <!-- Ana içerik: Mevcut planlar, yeni plan oluşturma formu ve API önerileri -->
+  <div class="main-content">
+    <!-- Mevcut Planlar Paneli -->
+    <div class="panel">
+      <h3>Mevcut Çalışma Planlarınız</h3>
+      <ul class="plan-list">
+        {% for plan in study_plans %}
+          <li>
+            <div class="plan-header">
+              <span>{{ plan.subject }} - {{ plan.topic }} ({{ plan.study_hours }} saat)</span>
+              <form action="{{ url_for('delete_plan', plan_id=plan.id) }}" method="POST">
+                <button type="submit">Sil</button>
+              </form>
+            </div>
+            <div class="recommendation">
+              <strong>Ders Önerisi:</strong> {{ plan.recommendation }}
+            </div>
+          </li>
+        {% endfor %}
+        {% if study_plans|length == 0 %}
+          <li>Henüz çalışma planı eklenmedi.</li>
+        {% endif %}
+      </ul>
+    </div>
+    
+    <!-- Yeni Plan Oluşturma Paneli -->
+    <div class="panel">
+      <h3>Yeni Çalışma Planı Oluştur</h3>
+      <form action="{{ url_for('create_plan') }}" method="POST">
+        <!-- Ders Seçimi -->
+        <div class="form-group">
+          <label for="dersSecimi">Ders Seçin</label>
+          <select id="dersSecimi" name="subject" onchange="dersDegisti()">
+            <option value="">Ders Seçin...</option>
+            <option value="Matematik">Matematik</option>
+            <option value="Fizik">Fizik</option>
+            <option value="Kimya">Kimya</option>
+            <option value="Biyoloji">Biyoloji</option>
+            <option value="Edebiyat">Edebiyat</option>
+            <option value="Tarih">Tarih</option>
+            <option value="Diger">Diğer</option>
+          </select>
+        </div>
+        
+        <!-- "Diğer" seçeneği için ders adı girişi -->
+        <div class="form-group">
+          <input type="text" id="digerDers" name="diger_ders" placeholder="Ders Adı" style="display: none;">
+        </div>
+        
+        <!-- Konu Alanı: Datalist destekli input -->
+        <div class="form-group" id="konuContainer"></div>
+        
+        <!-- Çalışma Saatleri Girişi -->
+        <div class="form-group">
+          <label for="calisma_saatleri">Çalışma Saatleri</label>
+          <input type="text" id="calisma_saatleri" name="study_hours" placeholder="Örneğin: 2">
+        </div>
+        
+        <!-- Konu bilgisi için ek input: Konular -->
+        <div class="form-group">
+          <label for="konular">Konu</label>
+          <input type="text" id="konular_input" name="topic" placeholder="Konu bilgisi">
+        </div>
+        
+        <!-- Plan Oluştur Button -->
+        <button class="btn" type="submit">Planı Kaydet</button>
+      </form>
+      
+      <!-- Sonuç Gösterimi (isteğe bağlı) -->
+      <div id="sonuc" class="result"></div>
+    </div>
+    
+    <!-- API'den Gelen Ders Önerileri Paneli -->
+    {% if recommendations %}
+      <div class="panel">
+        <h3>Ders Önerileri</h3>
+        <p>
+          {% if recommendations.suggestions %}
+            {{ recommendations.suggestions }}
+          {% else %}
+            Öneri bilgisi bulunamadı.
+          {% endif %}
+        </p>
+      </div>
+    {% endif %}
+    
+  </div>
+  
+  <div class="footer">
+    <p>&copy; 2025 Çalışma Planlayıcı. <a href="/privacy">Gizlilik Politikası</a></p>
+  </div>
+  
+  <script>
+  // Statik konu verileri
+  const konuData = {
+    "Matematik": [
+      "Cebir", "Geometri", "Calculus", "İstatistik", "Olasılık", 
+      "Diferansiyel Denklemler", "Lineer Cebir", "Trigonometri"
+    ],
+    "Fizik": [
+      "Mekanik", "Termodinamik", "Elektromanyetizma", "Optik", 
+      "Kuantum Fiziği", "Modern Fizik"
+    ],
+    "Kimya": [
+      "Organik Kimya", "Anorganik Kimya", "Fizikokimya", "Biyokimya", 
+      "Analitik Kimya"
+    ],
+    "Biyoloji": [
+      "Genetik", "Ekoloji", "Hücre Biyolojisi", "Moleküler Biyoloji", 
+      "Zooloji", "Botanik"
+    ],
+    "Edebiyat": [
+      "Roman", "Şiir", "Deneme", "Eleştiri", "Hikaye", "Drama"
+    ],
+    "Tarih": [
+      "Osmanlı Tarihi", "Cumhuriyet Tarihi", "Antik Tarih", "Ortaçağ Tarihi", 
+      "Modern Tarih"
+    ]
+  };
+
+  function dersDegisti() {
+    const dersSecimi = document.getElementById("dersSecimi").value;
+    const digerDersInput = document.getElementById("digerDers");
+    const konuContainer = document.getElementById("konuContainer");
+    
+    // Konu alanını temizle
+    konuContainer.innerHTML = "";
+    
+    if (dersSecimi === "Diger") {
+      // Diğer ders seçildiyse: kullanıcı ders adını manuel girsin
+      digerDersInput.style.display = "block";
+      const label = document.createElement("label");
+      label.textContent = "Konuları girin (virgülle ayırın):";
+      label.style.marginBottom = "5px";
+      konuContainer.appendChild(label);
+      
+      const konuInput = document.createElement("input");
+      konuInput.type = "text";
+      konuInput.id = "konular_input";
+      konuInput.name = "topic";
+      konuInput.placeholder = "Konu bilgisi";
+      konuContainer.appendChild(konuInput);
+    } else {
+      // Önceden tanımlı dersler için konuları ekle
+      digerDersInput.style.display = "none";
+      const label = document.createElement("label");
+      label.textContent = "Konu Seçin";
+      label.style.marginBottom = "5px";
+      konuContainer.appendChild(label);
+      
+      const select = document.createElement("select");
+      select.id = "konular";
+      select.name = "topic";
+      
+      konuData[dersSecimi].forEach(konu => {
+        const option = document.createElement("option");
+        option.value = konu;
+        option.textContent = konu;
+        select.appendChild(option);
+      });
+      
+      konuContainer.appendChild(select);
+    }
+  }
+
+  // API'den öneri al
+  async function fetchRecommendations() {
+    try {
+      const response = await fetch('/api/recommendations');
+      if (!response.ok) throw new Error('API yanıtı alınamadı');
+      
+      const data = await response.json();
+      const recommendationContainer = document.getElementById("sonuc");
+      
+      if (data.suggestions) {
+        recommendationContainer.innerHTML = `<strong>Öneri:</strong> ${data.suggestions}`;
+      } else {
+        recommendationContainer.innerHTML = "Ders önerisi bulunamadı.";
+      }
+    } catch (error) {
+      const recommendationContainer = document.getElementById("sonuc");
+      recommendationContainer.innerHTML = `Bir hata oluştu: ${error.message}. Lütfen tekrar deneyin.`;
+    }
+  }
+
+  // Sayfa yüklendiğinde öneriyi getir
+  document.addEventListener("DOMContentLoaded", fetchRecommendations);
+  </script>
+</body>
+</html>

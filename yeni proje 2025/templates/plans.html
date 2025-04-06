@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çalışma Planları</title>
+</head>
+<body>
+    <h1>Çalışma Planlarınız</h1>
+    <a href="{{ url_for('index') }}">Ana Sayfaya Dön</a>
+    <ul>
+        {% for plan in plans %}
+        <li>
+            <strong>{{ plan.subject }}</strong> - {{ plan.topic }}<br>
+            Çalışma Süresi: {{ plan.study_hours }} saat<br>
+            Oluşturulma Zamanı: {{ plan.created_at }}
+        </li>
+        {% else %}
+        <p>Henüz bir çalışma planı eklemediniz.</p>
+        {% endfor %}
+    </ul>
+</body>
+</html>

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Çalışma Planlayıcı</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f1f3f5;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      max-width: 480px;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      text-align: center;
+    }
+    h2 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #333;
+      font-weight: 600;
+    }
+    .welcome {
+      font-size: 16px;
+      color: #555;
+      margin-bottom: 25px;
+    }
+    select, input, button {
+      width: 100%;
+      padding: 14px;
+      margin: 12px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      transition: all 0.3s ease;
+    }
+    select:focus, input:focus, button:focus {
+      outline: none;
+      border: 1px solid #28a745;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      border: none;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .logout {
+      background-color: #dc3545;
+    }
+    .logout:hover {
+      background-color: #c82333;
+    }
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      margin-bottom: 15px;
+    }
+    .input-group label {
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #444;
+      text-align: left;
+      width: 100%;
+    }
+    .input-group input,
+    .input-group select {
+      width: calc(100% - 24px);
+      padding: 12px;
+      font-size: 16px;
+    }
+    .input-group input[type="text"] {
+      font-style: italic;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 14px;
+      color: #888;
+    }
+    .footer a {
+      color: #28a745;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2>Çalışma Planlayıcı</h2>
+    {% if username %}
+      <p class="welcome">Hoş geldiniz, {{ username }}!</p>
+      <form action="{{ url_for('logout') }}" method="POST">
+        <button class="logout" type="submit">Çıkış Yap</button>
+      </form>
+
+      <h3>Çalışma Planı Oluştur</h3>
+
+      <!-- Ders Seçimi -->
+      <div class="input-group">
+        <label for="dersSecimi">Ders Seçin</label>
+        <select id="dersSecimi" onchange="dersDegisti()">
+          <option value="">Ders Seçin...</option>
+          <option value="Matematik">Matematik</option>
+          <option value="Fizik">Fizik</option>
+          <option value="Kimya">Kimya</option>
+          <option value="Biyoloji">Biyoloji</option>
+          <option value="Edebiyat">Edebiyat</option>
+          <option value="Tarih">Tarih</option>
+          <option value="Diger">Diğer</option>
+        </select>
+      </div>
+
+      <!-- "Diğer" seçeneği için ders adı girişi -->
+      <div class="input-group">
+        <input type="text" id="digerDers" placeholder="Ders Adı" style="display: none;">
+      </div>
+
+      <!-- Konu Alanı: Datalist destekli input -->
+      <div id="konuContainer"></div>
+
+      <!-- Çalışma Saatleri Girişi -->
+      <div class="input-group">
+        <label for="calisma_saatleri">Çalışma Saatleri</label>
+        <input type="text" id="calisma_saatleri" placeholder="Örneğin: 8-10">
+      </div>
+
+      <!-- Plan Oluştur Button -->
+      <button type="button" onclick="planOlustur()">Plan Oluştur</button>
+
+      <!-- Sonuç Gösterimi -->
+      <div id="sonuc"></div>
+    {% else %}
+      <p>Kullanıcı bilgileri bulunamadı. Lütfen giriş yapın.</p>
+      <a href="{{ url_for('login') }}">Giriş Yap</a>
+    {% endif %}
+
+    <div class="footer">
+      <p>&copy; 2025 Çalışma Planlayıcı. <a href="/privacy">Gizlilik Politikası</a></p>
+    </div>
+  </div>
+
+  <script>
+    // Statik konu verileri
+    const konuData = {
+      "Matematik": [
+        "Cebir", "Geometri", "Calculus", "İstatistik", "Olasılık", "Diferansiyel Denklemler",
+        "Lineer Cebir", "Trigonometri", "Sayılar Teorisi", "Kombinatorik", "Analiz", "Topoloji", "İleri Matematik"
+      ],
+      "Fizik": [
+        "Mekanik", "Termodinamik", "Elektromanyetizma", "Optik", "Kuantum Fiziği",
+        "Modern Fizik", "Nükleer Fizik", "Astrofizik", "Akışkanlar Mekaniği", "Katıhal Fiziği"
+      ],
+      "Kimya": [
+        "Organik Kimya", "Anorganik Kimya", "Fizikokimya", "Biyokimya", "Analitik Kimya",
+        "Endüstriyel Kimya", "Polimer Kimyası", "Kuantum Kimyası", "Asit-Baz Teorisi"
+      ],
+      "Biyoloji": [
+        "Genetik", "Ekoloji", "Biyokimya", "Evrim", "Hücre Biyolojisi",
+        "Moleküler Biyoloji", "Zooloji", "Botanik", "Mikrobiyoloji", "Sistematik Biyoloji"
+      ],
+      "Edebiyat": [
+        "Roman", "Şiir", "Deneme", "Eleştiri", "Hikaye", "Drama", "Edebiyat Teorisi",
+        "Modern Edebiyat", "Klasik Edebiyat", "Postmodern Edebiyat"
+      ],
+      "Tarih": [
+        "Osmanlı Tarihi", "Cumhuriyet Tarihi", "Antik Tarih", "Ortaçağ Tarihi", "Modern Tarih",
+        "Sosyal Tarih", "Kültürel Tarih", "Askeri Tarih", "Ekonomik Tarih"
+      ]
+    };
+
+    function dersDegisti() {
+      const dersSecimi = document.getElementById("dersSecimi").value;
+      const digerDersInput = document.getElementById("digerDers");
+      const konuContainer = document.getElementById("konuContainer");
+
+      // Konu alanını temizle
+      konuContainer.innerHTML = "";
+
+      if (dersSecimi === "Diger") {
+        // Diğer ders seçildiyse: kullanıcı ders adını manuel girsin
+        digerDersInput.style.display = "block";
+        const konuInput = document.createElement("input");
+        konuInput.type = "text";
+        konuInput.id = "konular";
+        konuInput.placeholder = "Konuları virgülle ayırarak girin";
+        konuContainer.appendChild(konuInput);
+      } else if (dersSecimi !== "") {
+        digerDersInput.style.display = "none";
+        createKonuInput(konuData[dersSecimi]);
+      } else {
+        digerDersInput.style.display = "none";
+      }
+    }
+
+    function createKonuInput(topics) {
+      const konuContainer = document.getElementById("konuContainer");
+      
+      const label = document.createElement("label");
+      label.textContent = "Konuları Seçin veya Yazın:";
+      label.style.display = "block";
+      label.style.marginBottom = "5px";
+      konuContainer.appendChild(label);
+      
+      let dataList = document.createElement("datalist");
+      dataList.id = "konuList";
+      topics.forEach(topic => {
+        let option = document.createElement("option");
+        option.value = topic;
+        dataList.appendChild(option);
+      });
+      konuContainer.appendChild(dataList);
+
+      const konuInput = document.createElement("input");
+      konuInput.type = "text";
+      konuInput.id = "konular";
+      konuInput.setAttribute("list", "konuList");
+      konuInput.placeholder = "Konuları yazın, öneriler listeden seçilebilir";
+      konuContainer.appendChild(konuInput);
+    }
+
+    function otomatikYontemBelirle(ders, calismaSaatleri) {
+      const yontemMapping = {
+        "Matematik": "Soru Çözümü",
+        "Fizik": "Teori",
+        "Kimya": "Teori",
+        "Biyoloji": "Okuma",
+        "Edebiyat": "Okuma",
+        "Tarih": "Okuma",
+      };
+
+      if (calismaSaatleri) {
+        const saatler = calismaSaatleri.split("-");
+        const baslangicSaat = parseInt(saatler[0].trim());
+        const bitisSaat = parseInt(saatler[1].trim());
+
+        if (bitisSaat - baslangicSaat <= 2) {
+          return "Kısa Çalışma: Fakat soru çözümü veya okuma yapabilirsiniz.";
+        } else if (bitisSaat - baslangicSaat <= 4) {
+          return "Orta Çalışma: Hem teori hem de uygulama çalışabilirsiniz.";
+        } else {
+          return "Uzun Çalışma: Derinlemesine analiz ve örnek çözümü önerilir.";
+        }
+      }
+      return yontemMapping[ders] || "Teori";
+    }
+
+    function planOlustur() {
+      const dersSecimi = document.getElementById("dersSecimi").value;
+      const konular = document.getElementById("konular").value;
+      const calismaSaatleri = document.getElementById("calisma_saatleri").value;
+      const digerDers = document.getElementById("digerDers").value;
+
+      if (!dersSecimi) {
+        alert("Ders seçin!");
+        return;
+      }
+
+      const yontem = otomatikYontemBelirle(dersSecimi, calismaSaatleri);
+      const dersAdi = dersSecimi === "Diger" ? digerDers : dersSecimi;
+      const plan = `
+        <h3>${dersAdi} Çalışma Planı</h3>
+        <p>Konular: ${konular}</p>
+        <p>Çalışma Yöntemi: ${yontem}</p>
+        <p>Çalışma Saatleri: ${calismaSaatleri}</p>
+      `;
+      document.getElementById("sonuc").innerHTML = plan;
+    }
+  </script>
+
+</body>
+</html>

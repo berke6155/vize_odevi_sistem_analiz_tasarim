@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kayıt Ol</title>
+  <style>
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .checkbox-container {
+      text-align: left;
+      margin: 10px 0;
+    }
+    .info {
+      font-size: 14px;
+      color: #555;
+      margin-top: 5px;
+    }
+    .error-message {
+      color: red;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <form method="POST">
+    <input type="text" name="username" placeholder="Kullanıcı Adı" required>
+    <input type="password" id="password" name="password" placeholder="Şifre" required>
+    <div class="checkbox-container">
+      <label>
+        <input type="checkbox" onclick="togglePassword()"> Şifreyi Göster
+      </label>
+    </div>
+    <p class="info">
+      Şifreniz en az 8 karakter, bir büyük harf, bir küçük harf, bir rakam ve bir özel karakter içermelidir.
+    </p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          {% if category == 'error' %}
+            <p class="error-message">{{ message }}</p>
+          {% endif %}
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    
+    <button type="submit">Kayıt Ol</button>
+  </form>
+  
+  <script>
+    function togglePassword() {
+      var passwordField = document.getElementById("password");
+      if (passwordField.type === "password") {
+        passwordField.type = "text";
+      } else {
+        passwordField.type = "password";
+      }
+    }
+  </script>
+</body>
+</html>
